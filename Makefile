@@ -40,6 +40,13 @@ all: clean install regenerate install tests errcheck vet
 
 buildserverall: clean install regenerate install tests vet js purego
 
+yzc:
+	go install ./proto
+	go install ./gogoproto
+	go install ./jsonpb
+	go install ./protoc-gen-gogofasterpool
+	go install ./gogoreplace
+
 install:
 	go install ./proto
 	go install ./gogoproto

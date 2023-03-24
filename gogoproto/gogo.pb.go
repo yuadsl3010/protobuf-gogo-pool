@@ -705,6 +705,15 @@ var E_Wktpointer = &proto.ExtensionDesc{
 	Filename:      "gogo.proto",
 }
 
+var E_Syncpool = &proto.ExtensionDesc{
+	ExtendedType:  (*descriptor.FileOptions)(nil),
+	ExtensionType: (*bool)(nil),
+	Field:         65013,
+	Name:          "gogoproto.syncpool",
+	Tag:           "varint,65013,opt,name=syncpool",
+	Filename:      "gogo.proto",
+}
+
 func init() {
 	proto.RegisterExtension(E_GoprotoEnumPrefix)
 	proto.RegisterExtension(E_GoprotoEnumStringer)
@@ -782,6 +791,7 @@ func init() {
 	proto.RegisterExtension(E_Stdtime)
 	proto.RegisterExtension(E_Stdduration)
 	proto.RegisterExtension(E_Wktpointer)
+	proto.RegisterExtension(E_Syncpool)
 }
 
 func init() { proto.RegisterFile("gogo.proto", fileDescriptor_592445b5231bc2b9) }
