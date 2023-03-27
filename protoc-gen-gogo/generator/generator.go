@@ -2643,7 +2643,7 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		g.P("globalEmpty", mc.goName, "=", mc.goName, "{}")
 		g.P(")")
 
-		g.P("func ", mc.goName, "PoolPut(m *", mc.goName, ") {")
+		g.P("func PoolPut", mc.goName, "(m *", mc.goName, ") {")
 		for _, proto := range mc.message.DescriptorProto.GetField() {
 			if proto.GetType() == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
 				name := proto.GetJsonName() // allRegular, we need change to AllRegular
@@ -2657,7 +2657,7 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		g.P("globalPool", mc.goName, ".Put(m)")
 		g.P("}")
 
-		g.P("func ", mc.goName, "PoolGet() *", mc.goName, " {")
+		g.P("func PoolGet", mc.goName, "() *", mc.goName, " {")
 		g.P("return globalPool", mc.goName, ".Get().(*", mc.goName, ")")
 		g.P("}")
 	}
