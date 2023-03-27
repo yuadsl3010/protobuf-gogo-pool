@@ -2635,12 +2635,17 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 	g.generateInternalStructFields(mc, topLevelFields)
 	g.P("}")
 
-	if gogoproto.UseSyncPool(mc.message.File().FileDescriptorProto) {
+	// always need globalEmpty
+	g.P("var (")
+	g.P("globalEmpty", mc.goName, "=", mc.goName, "{}")
+	g.P(")")
+
+	syncPool := gogoproto.UseSyncPool(mc.message.File().FileDescriptorProto)
+	if syncPool {
 		g.P("var (")
 		g.P("globalPool", mc.goName, "=sync.Pool{")
 		g.P("New:func() interface{} {return new(", mc.goName, ")},")
 		g.P("}")
-		g.P("globalEmpty", mc.goName, "=", mc.goName, "{}")
 		g.P(")")
 
 		g.P("func PoolPut", mc.goName, "(m *", mc.goName, ") {")
@@ -2659,7 +2664,7 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 	}
 
 	g.P("func PoolGet", mc.goName, "() *", mc.goName, " {")
-	if gogoproto.UseSyncPool(mc.message.File().FileDescriptorProto) {
+	if syncPool {
 		g.P("return globalPool", mc.goName, ".Get().(*", mc.goName, ")")
 	} else {
 		g.P("return &", mc.goName, "{}")
@@ -2685,11 +2690,7 @@ func (g *Generator) generateSetters(mc *msgCtx, topLevelFields []topLevelField) 
 // generateCommonMethods adds methods to the message that are not on a per field basis.
 func (g *Generator) generateCommonMethods(mc *msgCtx) {
 	// Reset, String and ProtoMessage methods.
-	if gogoproto.UseSyncPool(mc.message.File().FileDescriptorProto) {
-		g.P("func (m *", mc.goName, ") Reset() { *m = globalEmpty", mc.goName, " }")
-	} else {
-		g.P("func (m *", mc.goName, ") Reset() { *m = ", mc.goName, "{} }")
-	}
+	g.P("func (m *", mc.goName, ") Reset() { *m = globalEmpty", mc.goName, " }")
 	if gogoproto.EnabledGoStringer(g.file.FileDescriptorProto, mc.message.DescriptorProto) {
 		g.P("func (m *", mc.goName, ") String() string { return ", g.Pkg["proto"], ".CompactTextString(m) }")
 	}
