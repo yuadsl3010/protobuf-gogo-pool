@@ -2630,7 +2630,9 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 	}
 	if gogoproto.UseSyncPool(mc.message.File().FileDescriptorProto) {
 		g.P("var (")
-		g.P("globalPool", mc.goName, "=sync.Pool{}")
+		g.P("globalPool", mc.goName, "=sync.Pool{")
+		g.P("New:func() interface{} {return new(", mc.goName, ")},")
+		g.P("}")
 		g.P("globalEmpty", mc.goName, "=", mc.goName, "{}")
 		g.P(")")
 	}
