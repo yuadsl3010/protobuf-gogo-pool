@@ -2656,11 +2656,15 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		g.P("*m = globalEmpty", mc.goName)
 		g.P("globalPool", mc.goName, ".Put(m)")
 		g.P("}")
-
-		g.P("func PoolGet", mc.goName, "() *", mc.goName, " {")
-		g.P("return globalPool", mc.goName, ".Get().(*", mc.goName, ")")
-		g.P("}")
 	}
+
+	g.P("func PoolGet", mc.goName, "() *", mc.goName, " {")
+	if gogoproto.UseSyncPool(mc.message.File().FileDescriptorProto) {
+		g.P("return globalPool", mc.goName, ".Get().(*", mc.goName, ")")
+	} else {
+		g.P("return &", mc.goName, "{}")
+	}
+	g.P("}")
 }
 
 // generateGetters adds getters for all fields, including oneofs and weak fields when applicable.
