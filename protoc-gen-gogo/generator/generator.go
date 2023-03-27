@@ -2629,7 +2629,10 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		g.P(deprecationComment)
 	}
 	if gogoproto.UseSyncPool(mc.message.File().FileDescriptorProto) {
-		g.P("var ()")
+		g.P("var (")
+		g.P("globalPool", mc.goName, "=sync.Pool{}")
+		g.P("globalEmpty", mc.goName, "=", mc.goName, "{}")
+		g.P(")")
 	}
 	g.P("type ", Annotate(mc.message.file, mc.message.path, mc.goName), " struct {")
 	for _, pf := range topLevelFields {
