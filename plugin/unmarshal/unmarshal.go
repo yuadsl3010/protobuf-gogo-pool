@@ -424,9 +424,7 @@ func (p *unmarshal) mapField(varName string, customType bool, field *descriptor.
 		} else if gogoproto.IsStdBytes(field) {
 			p.P(`if err := `, p.typesPkg.Use(), `.StdBytesUnmarshal(`, varName, `, `, buf, `); err != nil {`)
 		} else {
-			desc := p.ObjectNamed(field.GetTypeName())
-			msgname := p.TypeName(desc)
-			p.P(varName, ` = PoolGet`, msgname, `()`)
+			p.P(varName, ` = `, p.GenPoolGet(field))
 			p.P(`if err := `, varName, `.Unmarshal(`, buf, `); err != nil {`)
 		}
 		p.In()
@@ -944,7 +942,7 @@ func (p *unmarshal) field(file *generator.FileDescriptor, msg *generator.Descrip
 					p.P(`m.`, fieldname, ` = append(m.`, fieldname, `, []byte{})`)
 				}
 			} else if nullable && !gogoproto.IsCustomType(field) {
-				p.P(`m.`, fieldname, ` = append(m.`, fieldname, `, &`, msgname, `{})`)
+				p.P(`m.`, fieldname, ` = append(m.`, fieldname, `, `, p.GenPoolGet(field), `)`)
 			} else {
 				goType, _ := p.GoType(nil, field)
 				// remove the slice from the type, i.e. []*T -> *T
@@ -1052,11 +1050,7 @@ func (p *unmarshal) field(file *generator.FileDescriptor, msg *generator.Descrip
 			} else if gogoproto.IsStdBytes(field) {
 				p.P(`m.`, fieldname, ` = new([]byte)`)
 			} else {
-				desc := p.ObjectNamed(field.GetTypeName())
-				msgname := p.TypeName(desc)
-				i := strings.Index(msgname, ".")
-				msgname = msgname[:i+1] + "PoolGet" + msgname[i+1:]
-				p.P(`m.`, fieldname, ` = `, msgname, `()`)
+				p.P(`m.`, fieldname, ` = `, p.GenPoolGet(field))
 			}
 			p.Out()
 			p.P(`}`)
@@ -1295,6 +1289,14 @@ func (p *unmarshal) field(file *generator.FileDescriptor, msg *generator.Descrip
 	default:
 		panic("not implemented")
 	}
+}
+
+func (p *unmarshal) GenPoolGet(field *descriptor.FieldDescriptorProto) string {
+	desc := p.ObjectNamed(field.GetTypeName())
+	msgname := p.TypeName(desc)
+	i := strings.Index(msgname, ".")
+	msgname = msgname[:i+1] + "PoolGet" + msgname[i+1:] + "()"
+	return msgname
 }
 
 func (p *unmarshal) Generate(file *generator.FileDescriptor) {
