@@ -2648,12 +2648,21 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		g.P("}")
 		g.P(")")
 
-		g.P("func PoolPut", mc.goName, "(m *", mc.goName, ") {")
-		for _, proto := range mc.message.DescriptorProto.GetField() {
-			if proto.GetType() == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
-				name := proto.GetJsonName() // allRegular, we need change to AllRegular
+		g.P("func (m *", mc.goName, ") Recycle() {")
+		for _, field := range mc.message.DescriptorProto.GetField() {
+			if field.GetType() == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+				name := field.GetJsonName() // allRegular, we need change to AllRegular
 				if len(name) > 0 {
 					name = strings.ToUpper(name[:1]) + name[1:] // allRegular => AllRegular
+				}
+
+				if g.IsMap(field) || field.IsRepeated() {
+					g.P("for _, v := range m.", name, " {")
+					g.In()
+					g.P("v.Recycle()")
+					g.Out()
+					g.P("}")
+				} else {
 					g.P("m.", name, ".Recycle()")
 				}
 			}
@@ -2663,7 +2672,7 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		g.P("}")
 	}
 
-	g.P("func PoolGet", mc.goName, "() *", mc.goName, " {")
+	g.P("func New", mc.goName, "() *", mc.goName, " {")
 	if syncPool {
 		g.P("return globalPool", mc.goName, ".Get().(*", mc.goName, ")")
 	} else {
