@@ -146,9 +146,6 @@ func (p *gostring) Generate(file *generator.FileDescriptor) {
 	strconvPkg := p.NewImport("strconv")
 	reflectPkg := p.NewImport("reflect")
 	sortKeysPkg := p.NewImport("github.com/gogo/protobuf/sortkeys")
-	if gogoproto.UseSyncPool(file.FileDescriptorProto) {
-		p.NewImport("sync")
-	}
 
 	extensionToGoStringUsed := false
 	for _, message := range file.Messages() {

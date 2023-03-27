@@ -1315,6 +1315,10 @@ func (p *unmarshal) Generate(file *generator.FileDescriptor) {
 		protoPkg = p.NewImport("github.com/golang/protobuf/proto")
 	}
 
+	if gogoproto.UseSyncPool(file.FileDescriptorProto) {
+		p.NewImport("sync").Use()
+	}
+
 	for _, message := range file.Messages() {
 		ccTypeName := generator.CamelCaseSlice(message.TypeName())
 		if !gogoproto.IsUnmarshaler(file.FileDescriptorProto, message.DescriptorProto) &&

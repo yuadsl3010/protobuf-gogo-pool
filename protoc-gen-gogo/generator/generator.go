@@ -2656,14 +2656,16 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 					name = strings.ToUpper(name[:1]) + name[1:] // allRegular => AllRegular
 				}
 
-				if g.IsMap(field) || field.IsRepeated() {
-					g.P("for _, v := range m.", name, " {")
-					g.In()
-					g.P("v.Recycle()")
-					g.Out()
-					g.P("}")
-				} else {
-					g.P("m.", name, ".Recycle()")
+				if !gogoproto.IsStdType(field) && field.OneofIndex == nil {
+					if g.IsMap(field) || field.IsRepeated() {
+						g.P("for _, v := range m.", name, " {")
+						g.In()
+						g.P("v.Recycle()")
+						g.Out()
+						g.P("}")
+					} else {
+						g.P("m.", name, ".Recycle()")
+					}
 				}
 			}
 		}
