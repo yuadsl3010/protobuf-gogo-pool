@@ -2660,7 +2660,28 @@ func (g *Generator) generateSetters(mc *msgCtx, topLevelFields []topLevelField) 
 // generateCommonMethods adds methods to the message that are not on a per field basis.
 func (g *Generator) generateCommonMethods(mc *msgCtx) {
 	// Reset, String and ProtoMessage methods.
-	g.P("func (m *", mc.goName, ") Reset() { *m = ", mc.goName, "{} }")
+	if gogoproto.UseSyncPool(mc.message.File().FileDescriptorProto) {
+		g.P("func (m *", mc.goName, ") Reset() { *m = globalEmpty", mc.goName, " }")
+
+		g.P("func (m *", mc.goName, ") PoolPut() {")
+		for _, proto := range mc.message.DescriptorProto.GetField() {
+			if proto.GetType() == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+				name := proto.GetJsonName() // allRegular, we need change to AllRegular
+				if len(name) > 0 {
+					name = strings.ToUpper(name[:1]) + name[1:] // allRegular => AllRegular
+					g.P("m.", name, ".Recycle()")
+				}
+			}
+		}
+		g.P("*m = globalEmpty", mc.goName)
+		g.P("globalPool", mc.goName, ".Put(m)")
+		g.P("}")
+
+		// g.P("func (m *", mc.goName, ") PoolGet() {")
+		// g.P("}")
+	} else {
+		g.P("func (m *", mc.goName, ") Reset() { *m = ", mc.goName, "{} }")
+	}
 	if gogoproto.EnabledGoStringer(g.file.FileDescriptorProto, mc.message.DescriptorProto) {
 		g.P("func (m *", mc.goName, ") String() string { return ", g.Pkg["proto"], ".CompactTextString(m) }")
 	}
