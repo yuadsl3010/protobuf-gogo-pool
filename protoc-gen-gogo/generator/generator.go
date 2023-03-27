@@ -2649,6 +2649,8 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		g.P(")")
 
 		g.P("func (m *", mc.goName, ") Recycle() {")
+		// g.P("// name: ", mc.goName)
+		// g.P("// data: ", mc.message.String())
 		for _, field := range mc.message.DescriptorProto.GetField() {
 			if field.GetType() == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
 				name := field.GetJsonName() // allRegular, we need change to AllRegular
@@ -2656,13 +2658,19 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 					name = strings.ToUpper(name[:1]) + name[1:] // allRegular => AllRegular
 				}
 
-				if !gogoproto.IsStdType(field) && field.OneofIndex == nil {
+				// g.P("// name: ", name)
+				// g.P("// data: ", field.String())
+				if isFieldNest(field) {
 					if g.IsMap(field) || field.IsRepeated() {
-						g.P("for _, v := range m.", name, " {")
-						g.In()
-						g.P("v.Recycle()")
-						g.Out()
-						g.P("}")
+						nest := getNest(mc.message.NestedType, name)
+						g.P("// nest: ", nest.String())
+						if len(nest.GetField()) == 2 && isFieldNest(nest.GetField()[1]) {
+							g.P("for _, v := range m.", name, " {")
+							g.In()
+							g.P("v.Recycle()")
+							g.Out()
+							g.P("}")
+						}
 					} else {
 						g.P("m.", name, ".Recycle()")
 					}
@@ -2681,6 +2689,21 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		g.P("return &", mc.goName, "{}")
 	}
 	g.P("}")
+}
+
+func getNest(fields []*descriptor.DescriptorProto, name string) *descriptor.DescriptorProto {
+	name += "Entry"
+	for _, field := range fields {
+		if name == field.GetName() {
+			return field
+		}
+	}
+
+	return nil
+}
+
+func isFieldNest(field *descriptor.FieldDescriptorProto) bool {
+	return !gogoproto.IsStdType(field) && field.OneofIndex == nil
 }
 
 // generateGetters adds getters for all fields, including oneofs and weak fields when applicable.
