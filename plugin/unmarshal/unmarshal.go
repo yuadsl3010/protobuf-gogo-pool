@@ -426,7 +426,7 @@ func (p *unmarshal) mapField(varName string, customType bool, field *descriptor.
 		} else {
 			desc := p.ObjectNamed(field.GetTypeName())
 			msgname := p.TypeName(desc)
-			p.P(varName, ` = &`, msgname, `{}`)
+			p.P(varName, ` = PoolGet`, msgname, `()`)
 			p.P(`if err := `, varName, `.Unmarshal(`, buf, `); err != nil {`)
 		}
 		p.In()
@@ -503,7 +503,6 @@ func (p *unmarshal) field(file *generator.FileDescriptor, msg *generator.Descrip
 	nullable := gogoproto.IsNullable(field)
 	typ := p.noStarOrSliceType(msg, field)
 	oneof := field.OneofIndex != nil
-	syncPool := gogoproto.UseSyncPool(file.FileDescriptorProto)
 	switch *field.Type {
 	case descriptor.FieldDescriptorProto_TYPE_DOUBLE:
 		p.P(`var v uint64`)
@@ -1053,18 +1052,11 @@ func (p *unmarshal) field(file *generator.FileDescriptor, msg *generator.Descrip
 			} else if gogoproto.IsStdBytes(field) {
 				p.P(`m.`, fieldname, ` = new([]byte)`)
 			} else {
-				if syncPool {
-					fieldType := field.GetTypeName()[1:]
-					i := strings.Index(fieldType, ".")
-					if i > -1 {
-						fieldType = fieldType[:i+1] + "PoolGet" + fieldType[i+1:]
-					}
-					p.P(`m.`, fieldname, ` = `, fieldType, `()`)
-				} else {
-					goType, _ := p.GoType(nil, field)
-					// remove the star from the type
-					p.P(`m.`, fieldname, ` = &`, goType[1:], `{}`)
-				}
+				desc := p.ObjectNamed(field.GetTypeName())
+				msgname := p.TypeName(desc)
+				i := strings.Index(msgname, ".")
+				msgname = msgname[:i+1] + "PoolGet" + msgname[i+1:]
+				p.P(`m.`, fieldname, ` = `, msgname, `()`)
 			}
 			p.Out()
 			p.P(`}`)
