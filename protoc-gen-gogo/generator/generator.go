@@ -2628,6 +2628,13 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		}
 		g.P(deprecationComment)
 	}
+	g.P("type ", Annotate(mc.message.file, mc.message.path, mc.goName), " struct {")
+	for _, pf := range topLevelFields {
+		pf.decl(g, mc)
+	}
+	g.generateInternalStructFields(mc, topLevelFields)
+	g.P("}")
+
 	if gogoproto.UseSyncPool(mc.message.File().FileDescriptorProto) {
 		g.P("var (")
 		g.P("globalPool", mc.goName, "=sync.Pool{")
@@ -2635,13 +2642,25 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		g.P("}")
 		g.P("globalEmpty", mc.goName, "=", mc.goName, "{}")
 		g.P(")")
+
+		g.P("func ", mc.goName, "PoolPut(m *", mc.goName, ") {")
+		for _, proto := range mc.message.DescriptorProto.GetField() {
+			if proto.GetType() == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+				name := proto.GetJsonName() // allRegular, we need change to AllRegular
+				if len(name) > 0 {
+					name = strings.ToUpper(name[:1]) + name[1:] // allRegular => AllRegular
+					g.P("m.", name, ".Recycle()")
+				}
+			}
+		}
+		g.P("*m = globalEmpty", mc.goName)
+		g.P("globalPool", mc.goName, ".Put(m)")
+		g.P("}")
+
+		g.P("func ", mc.goName, "PoolGet() *", mc.goName, " {")
+		g.P("return globalPool", mc.goName, ".Get().(*", mc.goName, ")")
+		g.P("}")
 	}
-	g.P("type ", Annotate(mc.message.file, mc.message.path, mc.goName), " struct {")
-	for _, pf := range topLevelFields {
-		pf.decl(g, mc)
-	}
-	g.generateInternalStructFields(mc, topLevelFields)
-	g.P("}")
 }
 
 // generateGetters adds getters for all fields, including oneofs and weak fields when applicable.
@@ -2664,23 +2683,6 @@ func (g *Generator) generateCommonMethods(mc *msgCtx) {
 	// Reset, String and ProtoMessage methods.
 	if gogoproto.UseSyncPool(mc.message.File().FileDescriptorProto) {
 		g.P("func (m *", mc.goName, ") Reset() { *m = globalEmpty", mc.goName, " }")
-
-		g.P("func (m *", mc.goName, ") PoolPut() {")
-		for _, proto := range mc.message.DescriptorProto.GetField() {
-			if proto.GetType() == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
-				name := proto.GetJsonName() // allRegular, we need change to AllRegular
-				if len(name) > 0 {
-					name = strings.ToUpper(name[:1]) + name[1:] // allRegular => AllRegular
-					g.P("m.", name, ".Recycle()")
-				}
-			}
-		}
-		g.P("*m = globalEmpty", mc.goName)
-		g.P("globalPool", mc.goName, ".Put(m)")
-		g.P("}")
-
-		// g.P("func (m *", mc.goName, ") PoolGet() {")
-		// g.P("}")
 	} else {
 		g.P("func (m *", mc.goName, ") Reset() { *m = ", mc.goName, "{} }")
 	}
