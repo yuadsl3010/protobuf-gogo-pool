@@ -2649,6 +2649,9 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		g.P(")")
 
 		g.P("func (m *", mc.goName, ") Recycle() {")
+		g.In()
+		g.P("if m == nil { return }")
+		g.Out()
 		for _, field := range mc.message.DescriptorProto.GetField() {
 			if field.IsMessage() {
 				name := field.GetJsonName() // allRegular, we need change to AllRegular
