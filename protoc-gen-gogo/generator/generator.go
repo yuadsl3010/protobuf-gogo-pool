@@ -606,9 +606,10 @@ func (g *Generator) AddImport(importPath GoImportPath) GoPackageName {
 }
 
 var globalPackageNames = map[GoPackageName]bool{
-	"fmt":   true,
-	"math":  true,
-	"proto": true,
+	"fmt":     true,
+	"math":    true,
+	"proto":   true,
+	"runtime": true,
 }
 
 // Create and remember a guaranteed unique package name. Pkg is the candidate name.
@@ -769,6 +770,7 @@ func (g *Generator) SetPackageNames() {
 		"fmt":          "fmt",
 		"math":         "math",
 		"proto":        "proto",
+		"runtime":      "runtime",
 		"golang_proto": "golang_proto",
 	}
 }
@@ -1405,6 +1407,7 @@ func (g *Generator) generateImports() {
 	g.P("import (")
 	g.PrintImport(GoPackageName(g.Pkg["fmt"]), "fmt")
 	g.PrintImport(GoPackageName(g.Pkg["math"]), "math")
+	g.PrintImport(GoPackageName(g.Pkg["runtime"]), "runtime")
 	if gogoproto.ImportsGoGoProto(g.file.FileDescriptorProto) {
 		g.PrintImport(GoPackageName(g.Pkg["proto"]), GoImportPath(g.ImportPrefix)+GoImportPath("github.com/gogo/protobuf/proto"))
 		if gogoproto.RegistersGolangProto(g.file.FileDescriptorProto) {
