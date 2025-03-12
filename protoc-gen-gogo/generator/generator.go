@@ -2635,16 +2635,18 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 	g.generateInternalStructFields(mc, topLevelFields)
 	g.P("}")
 
-	// always need globalEmpty
-	g.P("var (")
-	g.P("globalEmpty", mc.goName, "=", mc.goName, "{}")
-	g.P(")")
-
 	syncPool := gogoproto.UseSyncPool(mc.message.File().FileDescriptorProto)
 	if syncPool {
 		g.P("var (")
+		g.P("globalEmpty", mc.goName, "=", mc.goName, "{}")
+		g.P("globalGetCount", mc.goName, "= 0")
+		g.P("globalPutCount", mc.goName, "= 0")
+		g.P("globalNewCount", mc.goName, "= 0")
 		g.P("globalPool", mc.goName, "=sync.Pool{")
-		g.P("New:func() interface{} {return new(", mc.goName, ")},")
+		g.P("New:func() interface{} {")
+		g.P("globalNewCount", mc.goName, "++")
+		g.P("return new(", mc.goName, ")")
+		g.P("},")
 		g.P("}")
 		g.P(")")
 
@@ -2677,16 +2679,20 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		}
 		g.P("*m = globalEmpty", mc.goName)
 		g.P("globalPool", mc.goName, ".Put(m)")
+		g.P("globalPutCount", mc.goName, "++")
+		g.P("}")
+
+		g.P("func New", mc.goName, "() *", mc.goName, " {")
+		g.P("globalGetCount", mc.goName, "++")
+		g.P("p := globalPool", mc.goName, ".Get().(*", mc.goName, ")")
+		g.P("runtime.AddCleanup(p, func(p *", mc.goName, ") { p.Recycle() }, p)")
+		g.P("return p")
+		g.P("}")
+
+		g.P("func Stat", mc.goName, "() string {")
+		g.P("return fmt.Sprintf(\"", mc.goName, " Get: %v New: %v Put: %v\", globalGetCount", mc.goName, ", globalNewCount", mc.goName, ", globalPutCount", mc.goName, ")")
 		g.P("}")
 	}
-
-	g.P("func New", mc.goName, "() *", mc.goName, " {")
-	if syncPool {
-		g.P("return globalPool", mc.goName, ".Get().(*", mc.goName, ")")
-	} else {
-		g.P("return &", mc.goName, "{}")
-	}
-	g.P("}")
 }
 
 func getNest(fields []*descriptor.DescriptorProto, name string) *descriptor.DescriptorProto {
