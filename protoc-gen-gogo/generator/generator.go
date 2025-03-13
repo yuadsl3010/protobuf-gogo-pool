@@ -2688,7 +2688,8 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		g.P("func New", mc.goName, "() *", mc.goName, " {")
 		g.P("globalGetCount", mc.goName, "++")
 		g.P("p := globalPool", mc.goName, ".Get().(*", mc.goName, ")")
-		g.P("runtime.AddCleanup(p, func(p *", mc.goName, ") { p.Recycle() }, p)")
+		// g.P("runtime.AddCleanup(p, func(p *", mc.goName, ") { p.Recycle() }, p)")
+		g.P("runtime.SetFinalizer(p, func(p *", mc.goName, ") { p.Recycle() })")
 		g.P("return p")
 		g.P("}")
 
