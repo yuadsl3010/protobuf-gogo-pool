@@ -1317,7 +1317,7 @@ func (p *unmarshal) Generate(file *generator.FileDescriptor) {
 
 	if gogoproto.UseSyncPool(file.FileDescriptorProto) {
 		p.NewImport("sync").Use()
-		p.NewImport("weak").Use()
+		// p.NewImport("weak").Use()
 	}
 
 	for _, message := range file.Messages() {

@@ -606,10 +606,9 @@ func (g *Generator) AddImport(importPath GoImportPath) GoPackageName {
 }
 
 var globalPackageNames = map[GoPackageName]bool{
-	"fmt":     true,
-	"math":    true,
-	"proto":   true,
-	"runtime": true,
+	"fmt":   true,
+	"math":  true,
+	"proto": true,
 }
 
 // Create and remember a guaranteed unique package name. Pkg is the candidate name.
@@ -770,7 +769,6 @@ func (g *Generator) SetPackageNames() {
 		"fmt":          "fmt",
 		"math":         "math",
 		"proto":        "proto",
-		"runtime":      "runtime",
 		"golang_proto": "golang_proto",
 	}
 }
@@ -1407,7 +1405,6 @@ func (g *Generator) generateImports() {
 	g.P("import (")
 	g.PrintImport(GoPackageName(g.Pkg["fmt"]), "fmt")
 	g.PrintImport(GoPackageName(g.Pkg["math"]), "math")
-	g.PrintImport(GoPackageName(g.Pkg["runtime"]), "runtime")
 	if gogoproto.ImportsGoGoProto(g.file.FileDescriptorProto) {
 		g.PrintImport(GoPackageName(g.Pkg["proto"]), GoImportPath(g.ImportPrefix)+GoImportPath("github.com/gogo/protobuf/proto"))
 		if gogoproto.RegistersGolangProto(g.file.FileDescriptorProto) {
@@ -2651,11 +2648,11 @@ func (g *Generator) generateMessageStruct(mc *msgCtx, topLevelFields []topLevelF
 		g.P("func init() {")
 		g.P("globalPool", mc.goName, ".New = func() interface{} {")
 		g.P("globalNewCount", mc.goName, "++")
-		g.P("p := new(", mc.goName, ")")
-		g.P("kp := weak.Make(p)")
-		g.P("runtime.AddCleanup(p, func(kp weak.Pointer[", mc.goName, "]) { kp.Value().Recycle() }, kp)")
-		// g.P("runtime.SetFinalizer(p, func(p *", mc.goName, ") { p.Recycle() })")
-		g.P("return p")
+		// g.P("p := new(", mc.goName, ")")
+		// g.P("kp := weak.Make(p)")
+		// g.P("runtime.AddCleanup(p, func(kp weak.Pointer[", mc.goName, "]) { kp.Value().Recycle() }, kp)")
+		// g.P("return p")
+		g.P("return new(", mc.goName, ")")
 		g.P("}")
 		g.P("}")
 
